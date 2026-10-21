@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Spline Rider: Dead Road</title>
+    <meta name="description" content="A physics driving game with zombies, built with p5.js and Matter.js: three levels, three cars, one way out." />
+    <meta name="theme-color" content="#2b1d1a" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="app">
+      <!-- p5.js canvas goes here -->
+      <div id="stage" aria-label="Game view"></div>
+
+      <!-- Heads-up display -->
+      <header id="hud" class="hud" hidden>
+        <div class="hud__group hud__group--left">
+          <div class="gauge">
+            <span class="gauge__icon" aria-hidden="true">⛽</span>
+            <div id="fuel-gauge" class="gauge__bar" role="meter" aria-label="Fuel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" data-testid="fuel">
+              <div id="fuel-fill" class="gauge__fill gauge__fill--fuel"></div>
+            </div>
+          </div>
+          <div id="boost-gauge-wrap" class="gauge">
+            <span class="gauge__icon" aria-hidden="true">🔥</span>
+            <div id="boost-gauge" class="gauge__bar" role="meter" aria-label="Nitro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" data-testid="boost">
+              <div id="boost-fill" class="gauge__fill gauge__fill--boost"></div>
+            </div>
+          </div>
+          <span id="fuel-hint" class="hud__hint"></span>
+        </div>
+
+        <div class="hud__group hud__group--center">
+          <span id="hud-level" class="hud__hint">Level 1</span>
+          <div class="progress" aria-hidden="true">
+            <div id="progress-fill" class="progress__fill"></div>
+            <span id="progress-car" class="progress__car">🚗</span>
+            <span class="progress__goal">🏁</span>
+          </div>
+          <span id="hud-remaining" class="hud__distance" data-testid="remaining">550 m</span>
+        </div>
+
+        <div class="hud__group hud__group--right">
+          <div class="chip chip--kills"><span aria-hidden="true">🧟</span><span id="hud-kills" data-testid="kills">0</span></div>
+          <div class="chip chip--speed"><span id="hud-speed">0 km/h</span></div>
+          <button id="mute-button" class="icon-button" type="button" title="Mute (M)" aria-label="Toggle sound" aria-pressed="false">🔊</button>
+          <button id="pause-button" class="icon-button" type="button" title="Pause (P)" aria-label="Pause">❚❚</button>
+        </div>
+      </header>
+
+      <div id="toasts" class="toasts" aria-live="polite"></div>
+
+      <!-- On-screen pedals (shown on touch devices) -->
+      <div class="pedals" aria-hidden="true">
+        <button id="brake-pedal" class="pedal pedal--brake" type="button">BRAKE</button>
+        <button id="boost-pedal" class="pedal pedal--boost" type="button">NITRO</button>
+        <button id="gas-pedal" class="pedal pedal--gas" type="button">GAS</button>
+      </div>
+
+      <!-- Shown while the artwork loads -->
+      <section id="loading-screen" class="screen screen--loading" aria-live="polite">
+        <div class="loading">
+          <p class="loading__title">Spline Rider<span>Dead Road</span></p>
+          <div class="loading__bar"><div id="loading-fill" class="loading__fill"></div></div>
+          <p class="loading__hint">Loading…</p>
+        </div>
+      </section>
+
+      <!-- Title screen -->
+      <section id="menu-screen" class="screen" hidden aria-labelledby="game-title">
+        <div class="panel panel--menu">
+          <p class="eyebrow">Visual Computing · Physics game</p>
+          <h1 id="game-title" class="title">Spline Rider<span>Dead Road</span></h1>
+          <p class="lead">The city has fallen. Three cars, three roads, one way out. Smash through the horde, jump the wrecks and reach the evac point.</p>
+
+          <button id="play-button" class="button button--primary" type="button">Play</button>
+
+          <div class="controls">
+            <div class="control"><kbd>→</kbd><kbd>D</kbd><span>Gas · tilt back in the air</span></div>
+            <div class="control"><kbd>←</kbd><kbd>A</kbd><span>Brake / reverse · tilt forward</span></div>
+            <div class="control"><kbd>Space</kbd><kbd>Shift</kbd><span>Nitro (levels 2 and 3)</span></div>
+            <div class="control"><kbd>P</kbd><span>Pause</span><kbd>R</kbd><span>Restart</span><kbd>M</kbd><span>Mute</span><kbd>V</kbd><span>Physics view</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Level select -->
+      <section id="levels-screen" class="screen" hidden aria-labelledby="levels-title">
+        <div class="panel panel--levels">
+          <h2 id="levels-title" class="panel__title">Choose a level</h2>
+          <p class="panel__subtitle">Finish a level to unlock the next one (and its car).</p>
+          <div id="level-cards" class="level-cards"></div>
+          <button id="levels-back-button" class="button button--ghost" type="button">Back</button>
+        </div>
+      </section>
+
+      <!-- Pause screen -->
+      <section id="pause-screen" class="screen" hidden aria-labelledby="pause-title">
+        <div class="panel">
+          <h2 id="pause-title" class="panel__title">Paused</h2>
+          <button id="resume-button" class="button button--primary" type="button">Resume</button>
+          <div class="button-row">
+            <button id="pause-restart-button" class="button" type="button">Restart</button>
+            <button id="pause-levels-button" class="button" type="button">Levels</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Result screen (level complete or failed) -->
+      <section id="result-screen" class="screen" hidden aria-labelledby="result-title">
+        <div class="panel">
+          <p id="result-badge" class="badge" hidden>New best!</p>
+          <h2 id="result-title" class="panel__title">Level complete!</h2>
+          <p id="result-subtitle" class="panel__subtitle"></p>
+
+          <dl class="stats">
+            <div><dt>Distance</dt><dd id="result-distance" data-testid="result-distance">0 m</dd></div>
+            <div><dt>Zombies</dt><dd id="result-kills">0</dd></div>
+            <div><dt>Time</dt><dd id="result-time">0.0 s</dd></div>
+            <div><dt>Flips</dt><dd id="result-flips">0</dd></div>
+          </dl>
+
+          <button id="next-button" class="button button--primary" type="button">Next level</button>
+          <button id="retry-button" class="button button--primary" type="button">Try again</button>
+          <button id="result-levels-button" class="button button--ghost" type="button">Levels</button>
+        </div>
+      </section>
+
+      <!-- Final screen after level 3 -->
+      <section id="victory-screen" class="screen" hidden aria-labelledby="victory-title">
+        <div class="panel">
+          <p class="eyebrow">Evacuated</p>
+          <h2 id="victory-title" class="title title--small">You made it out!</h2>
+          <p class="lead">Three roads, three cars, and a lot of zombies behind you.</p>
+          <dl class="stats">
+            <div><dt>Total zombies</dt><dd id="victory-kills">0</dd></div>
+            <div><dt>Total time</dt><dd id="victory-time">0 s</dd></div>
+          </dl>
+          <button id="victory-button" class="button button--primary" type="button">Back to levels</button>
+        </div>
+      </section>
+
+      <noscript>Spline Rider needs JavaScript to run.</noscript>
+    </main>
+
+    <!-- Libraries (vendored, so the game also works offline) -->
+    <script src="lib/p5.min.js"></script>
+    <script src="lib/matter.min.js"></script>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
